@@ -1,0 +1,12 @@
+# This is your .gitignore file
+
+# Ignore the final executable
+compiler
+
+# Ignore all generated .c and .h files
+parser.c
+parser.h
+lex.yy.c
+
+# Ignore all compiled object files
+*.o
