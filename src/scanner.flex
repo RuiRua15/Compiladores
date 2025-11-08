@@ -27,6 +27,7 @@ int yyline = 1;
 "is"        { return IS; }
 "begin"     { return TOK_BEGIN; }
 "end"       { return END; }
+"integer"   { return INTEGER_TYPE; }
 "if"        { return IF; }
 "then"      { return THEN; }
 "else"      { return ELSE; }
@@ -37,6 +38,8 @@ int yyline = 1;
 
 ":="  { return ASSIGN; }
 ";"   { return SEMICOLON; }
+":"   { return COLON; }
+","   { return COMMA; }
 "("   { return LPAREN; }
 ")"   { return RPAREN; }
 
@@ -47,7 +50,11 @@ int yyline = 1;
 "<"   { return LT; }
 ">"   { return GT; }
 "="   { return EQ; }
-
+"/="  { return NEQ; }
+"<="  { return LEQ; }
+">="  { return GEQ; } 
+"rem" { return REM; }
+"mod" { return MOD; }
 
 
 [a-zA-Z_][a-zA-Z0-9_]*  /*identifiers for variables*/  { 

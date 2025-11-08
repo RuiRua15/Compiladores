@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "symtab.h"
 
 extern int yylex();
 extern int yyline;
@@ -21,8 +22,11 @@ extern Stmt* root;
 %token PUT_LINE GET_LINE
 %token <strValue> IDENTIFIER
 %token ASSIGN SEMICOLON LPAREN RPAREN
-%token PLUS MINUS MUL DIV  // operations
-%token LT GT EQ            // bool operations
+%token PLUS MINUS MUL DIV REM MOD  // operations
+%token LT GT EQ NEQ LEQ GEQ        // bool operations
+
+// new tokens for declarations
+%token COLON COMMA INTEGER_TYPE
 
 //define types -> define each grammar symbol
 
@@ -33,9 +37,6 @@ extern Stmt* root;
   struct _Stmt* stmtValue;
 }
 
-// assign types to tokens
-
-
 //assign types to grammar rules
 
 %type <exprValue> expr term factor
@@ -44,8 +45,10 @@ extern Stmt* root;
 //operator precedence
 
 %left PLUS MINUS
-%left MUL DIV
-%left LT GT EQ //boolean ops
+%left MUL DIV REM MOD
+%left LT GT EQ NEQ LEQ GEQ //boolean ops
+
+// root
 
 %start program
 
@@ -54,11 +57,60 @@ extern Stmt* root;
 //grammar rules
 
 program:
-  PROCEDURE MAIN IS TOK_BEGIN stmt_list END MAIN SEMICOLON
+  PROCEDURE MAIN IS opt_decl_list TOK_BEGIN stmt_list END MAIN SEMICOLON
   {
-    root = $5;
+    root = $6;
     printf("Rule: Matched Program!\n");
   };
+
+opt_decl_list:
+  |
+  decl_list
+  ;
+
+decl_list:
+  declaration
+  |
+  decl_list declaration
+  ;
+
+declaration:
+  id_list COLON INTEGER_TYPE SEMICOLON
+  ;
+
+id_list:
+  IDENTIFIER
+  {
+    // semantic check for duplicate declaration
+    if(symbol_exists($1))
+    {
+      char errmsg[256];
+      sprintf(errmsg, "SEMANTIC ERROR: Duplicate declaration of '%s'", $1);
+      yyerror(errmsg);
+    }
+    else
+    {
+      symbol_add($1);
+    }
+  }
+  |
+  id_list COMMA IDENTIFIER
+  { 
+    // semantic check for duplicate declarations
+    if (symbol_exists($3)) 
+    {
+      char errmsg[256];
+      sprintf(errmsg, "SEMANTIC ERROR: Duplicate declaration of '%s'", $3);
+      yyerror(errmsg);
+    } 
+    else 
+    {
+      symbol_add($3); // Add to memory
+    }
+  }
+  ;
+
+
 
 stmt_list:
   /* empty */     { $$ = NULL; }
@@ -78,7 +130,15 @@ stmt:
 
 assign_stmt:
   IDENTIFIER ASSIGN expr SEMICOLON
-  { $$ = ast_assign($1, $3); }
+  { 
+    // semantic check for undeclared variable
+    if (!symbol_exists($1)) {
+        char errmsg[256];
+        sprintf(errmsg, "SEMANTIC ERROR: Undeclared variable '%s'", $1);
+        yyerror(errmsg);
+    }
+    $$ = ast_assign($1, $3); 
+  }
   ;
   
 putline_stmt:
@@ -113,6 +173,12 @@ expr:
   expr GT term        { $$ = ast_operation(GT, $1, $3); }
   |
   expr EQ term        { $$ = ast_operation(EQ, $1, $3); }
+  |
+  expr NEQ term       { $$ = ast_operation(NEQ, $1, $3); }
+  |
+  expr LEQ term       { $$ = ast_operation(LEQ, $1, $3); }
+  |
+  expr GEQ term       { $$ = ast_operation(GEQ, $1, $3); }
   ;
 
 term:
@@ -121,23 +187,36 @@ term:
   term MUL factor     { $$ = ast_operation(MUL, $1, $3); }
   |
   term DIV factor     { $$ = ast_operation(DIV, $1, $3); }
+  |
+  term REM factor     { $$ = ast_operation(REM, $1, $3); }
+  |
+  term MOD factor     { $$ = ast_operation(MOD, $1, $3); }
   ;
   
 factor:
   INT                 { $$ = ast_integer($1); }
   |
-  IDENTIFIER          { $$ = ast_variable($1); }
+  IDENTIFIER
+  { 
+    // semantic check for undeclared variable
+    if (!symbol_exists($1)) {
+        char errmsg[256];
+        sprintf(errmsg, "SEMANTIC ERROR: Undeclared variable '%s'", $1);
+        yyerror(errmsg);
+    }
+    $$ = ast_variable($1); 
+  }
   |
   GET_LINE            { $$ = ast_getline(); }
   |
-  LPAREN expr RPAREN  { $$ = $2; } // Pass through the inner expression
+  LPAREN expr RPAREN  { $$ = $2; }
   ;
 
 %%
 
-//funcao de erro
+//funcao de erro 
 
 void yyerror(const char* err) {
-  printf("Line %d: %s - '%s'\n", yyline, err, yytext  );
+  printf("Line %d: %s - at '%s'\n", yyline, err, yytext );
 }
 

@@ -2,10 +2,10 @@
 # CC = C Compilador
 CC = gcc
 # CFLAGS = Flags do compilador
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -Wno-unused-function
 
 # objectos que vamos criar
-OBJECTS = main.o ast.o parser.o lex.yy.o
+OBJECTS = main.o ast.o parser.o lex.yy.o symtab.o
 
 # nome do projeto
 TARGET = compiler
@@ -26,7 +26,10 @@ main.o: main.c ast.h parser.h
 ast.o: ast.c ast.h
 	$(CC) $(CFLAGS) -c ast.c
 
-parser.o: parser.c ast.h
+symtab.o: symtab.c symtab.h
+	$(CC) $(CFLAGS) -c symtab.c
+
+parser.o: parser.c ast.h parser.h symtab.h
 	$(CC) $(CFLAGS) -c parser.c
 
 lex.yy.o: lex.yy.c ast.h parser.h

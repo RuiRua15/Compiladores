@@ -81,6 +81,21 @@ void print_op(int op)
 	case EQ:
 		printf("EQ\n");
 		break;
+	case NEQ:
+		printf("NEQ\n");
+		break;
+	case LEQ:
+		printf("LEQ\n");
+		break;
+	case GEQ:
+		printf("GEQ\n");
+		break;
+	case REM:
+		printf("REM\n");
+		break;
+	case MOD:
+		printf("MOD\n");
+		break;
 	default:
 		printf("UNKNOWN_OP\n");
 	}
