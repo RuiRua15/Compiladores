@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "ast.h"
 #include "parser.h"
+#include "gen_code.h"
+#include "mips_code.h"
 
 Stmt *root; // global variable for AST
 
@@ -25,19 +27,20 @@ int main(int argc, char *argv[])
 	}
 
 	yyin = f; // read from this file instead of stdin
+
 	printf("=== Parsing Program===\n");
-	if (yyparse() == 0)
+	if (yyparse() == 0 && root)
 	{
 		printf("Parsing complete!\n");
 		printf("=== Abstract Syntax Tree ===\n");
-		if (root)
-		{
-			print_stmt(root, 0);
-		}
-		else
-		{
-			printf("AST is empty\n");
-		}
+		printf("\n");
+		print_stmt(root, 0);
+		printf("\n");
+		printf("=== Intermediate Code (TAC) ===\n");
+		TAC *ir = generate_code(root);
+		printf("\n");
+		tac_print(ir);
+		mips_generate(ir, "output.asm");
 	}
 	else
 	{

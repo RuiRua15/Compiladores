@@ -6,23 +6,33 @@
 // head of linked list
 static Symbol *table_head = NULL;
 
-void symbol_add(char *name) // simple add function
+// in MIPS, local variables start at -4 and go down from fp
+
+static int current_stack_offset = 0;
+
+Symbol *symbol_add(char *name, SymbolType type) // simple add function
 {
-    if (symbol_exists(name))
+    if (symbol_find(name))
     {
-        printf("SEMANTIC ERROR: Duplicate declaration of '%s'\n", name);
-        exit(1);
+        return symbol_find(name);
     }
 
     Symbol *new_symbol = (Symbol *)malloc(sizeof(Symbol));
     new_symbol->name = strdup(name);
+    new_symbol->type = type;
+
+    // offset
+    current_stack_offset -= 4;
+    new_symbol->offset = current_stack_offset;
 
     // add to front
     new_symbol->next = table_head;
     table_head = new_symbol;
+
+    return new_symbol;
 }
 
-int symbol_exists(char *name) // simple exists function
+Symbol *symbol_find(char *name) // simple exists function
 {
     Symbol *current = table_head;
 
@@ -30,9 +40,9 @@ int symbol_exists(char *name) // simple exists function
     {
         if (strcmp(current->name, name) == 0)
         {
-            return 1;
+            return current;
         }
         current = current->next;
     }
-    return 0;
+    return NULL;
 }
